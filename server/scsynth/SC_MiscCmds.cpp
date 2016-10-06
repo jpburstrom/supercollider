@@ -1305,6 +1305,7 @@ SCErr meth_status(World *inWorld, int inSize, char *inData, ReplyAddress *inRepl
 SCErr meth_quit(World *inWorld, int inSize, char *inData, ReplyAddress *inReply);
 SCErr meth_quit(World *inWorld, int inSize, char *inData, ReplyAddress *inReply)
 {
+        scprintf("osc-message quit received.\n");
 	CallSequencedCommand(AudioQuitCmd, inWorld, inSize, inData, inReply);
 	return kSCErr_None;
 }
