@@ -172,6 +172,14 @@ void BeatTrack2_Ctor(BeatTrack2* unit)
 
 
 	unit->mCalcFunc = (UnitCalcFunc)&BeatTrack2_next;
+
+	// initialize outputs
+	ZOUT0(0) = 0.0;
+	ZOUT0(1) = 0.0;
+	ZOUT0(2) = 0.0;
+	ZOUT0(3) = unit->m_outputtempo;
+	ZOUT0(4) = unit->m_outputphase;
+	ZOUT0(5) = unit->m_outputgroove;
 }
 
 
@@ -334,9 +342,9 @@ void calculatetemplate(BeatTrack2 *unit, int which, int j)
 //a consistency check could also run to look at change from last time to this
 void finaldecision(BeatTrack2 *unit)
 {
-	int foundgood= 0;
-	int bestcandidate =0;
-	int bestpreviousmatchsum=0; //(-1);  //should be 0, but allowing different for now
+	// int foundgood = 0;
+	int bestcandidate = 0;
+	int bestpreviousmatchsum = 0; //(-1);  //should be 0, but allowing different for now
 	float excess; //, consistency;
 				  //int exactmatches, closematches;  //can be out by a few indices on period; could match on tempo but not phase etc
 				  //combine these four factors in one master score?
@@ -369,7 +377,11 @@ void finaldecision(BeatTrack2 *unit)
 		if(secondbest!= 0) matchsum += (int)excess;
 
 		//so must have at least one match //&& (excess>1.03)
-		if ((matchsum>bestpreviousmatchsum)) {bestcandidate = i; bestpreviousmatchsum= matchsum; foundgood=1;}
+		if ((matchsum > bestpreviousmatchsum)) {
+			bestcandidate = i;
+			bestpreviousmatchsum = matchsum;
+			// foundgood = 1;
+		}
 
 	}
 

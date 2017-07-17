@@ -37,6 +37,7 @@
 # include "SC_Win32Utils.h"
 # include <io.h>
 # include <windows.h>
+# include <ioapiset.h>
 #endif
 
 #ifdef __APPLE__
@@ -169,7 +170,7 @@ bool SC_TerminalClient::parseOptions(int& argc, char**& argv, Options& opt)
 				opt.mCallRun = true;
 				break;
 			case 'v':
-				fprintf(stdout, "sclang %s\n", SC_VersionString().c_str());
+				fprintf(stdout, "sclang %s (%s)\n", SC_VersionString().c_str(), SC_BuildString().c_str());
 				quit(0);
 				return false;
 				break;
@@ -625,13 +626,18 @@ void SC_TerminalClient::initInput()
 
 void SC_TerminalClient::startInput()
 {
-	thread thread(std::bind(&SC_TerminalClient::inputThreadFn, this));
+	SC_Thread thread(std::bind(&SC_TerminalClient::inputThreadFn, this));
 	mInputThread = std::move(thread);
 }
 
 void SC_TerminalClient::endInput()
 {
 	mInputService.stop();
+	mStdIn.cancel();
+#ifdef _WIN32
+	// Note this breaks Windows XP compatibility, since this function is only defined in Vista and later 
+	::CancelIoEx(GetStdHandle(STD_INPUT_HANDLE), nullptr);
+#endif
 	postfl("main: waiting for input thread to join...\n");
 	mInputThread.join();
 	postfl("main: quitting...\n");

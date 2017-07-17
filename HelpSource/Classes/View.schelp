@@ -248,6 +248,15 @@ METHOD:: resizeTo
 	argument:: height
 		An Int: the new vertical size of the view.
 
+METHOD:: resizeToBounds
+
+	argument:: rect
+		A Rect: the bounds to which the view will be resized.
+
+METHOD:: resizeToHint
+
+	Resizes view to the bounds returned by link::#sizeHint::.		
+
 METHOD:: resize
 	Determines what happens with the view's position and size when its parent is resized. See link::Guides/GUI-Introduction#view:: for further explanation.
 
@@ -686,9 +695,11 @@ METHOD:: onClose
 
 
 
-SUBSECTION:: Subclassing
+SUBSECTION:: Handlers
 
-The following methods are the default handlers of key press and release events. When subclassing, override them to implement custom functionality. Many view classes in the standard library do that.
+note:: Older tutorials might recommend subclassing View to override these methods. Don't do that. Use composition, not inheritance. Make the View a property of your custom view class. ::
+
+The following methods are the default handlers of key press and release events.
 
 METHOD:: defaultKeyDownAction
 

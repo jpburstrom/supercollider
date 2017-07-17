@@ -16,30 +16,30 @@ if(NOT AUDIOAPI MATCHES "^(jack|coreaudio|portaudio|bela)$")
 endif()
 
 if(AUDIOAPI STREQUAL jack)
-	find_package(Jack)
-	if(NOT JACK_FOUND)
-		message(FATAL_ERROR "Jack selected as audio API, but development files not found")
-	endif()
-elseif(AUDIOAPI STREQUAL portaudio AND NOT MINGW AND NOT MSVC) # MSYS like Apple
-	find_package(Portaudio)
-	if(NOT PORTAUDIO_FOUND)
-		message(FATAL_ERROR "Portaudio selected as audio API, but development files not found")
-	endif()
+  find_package(Jack)
+  if(NOT JACK_FOUND)
+    message(FATAL_ERROR "Jack selected as audio API, but development files not found")
+  endif()
+elseif(AUDIOAPI STREQUAL portaudio AND ((NOT WIN32) OR MSYS)) # MSYS like Apple
+    find_package(Portaudio)
+    if(NOT PORTAUDIO_FOUND)
+      message(FATAL_ERROR "Portaudio selected as audio API, but development files not found")
+    endif()
 elseif(AUDIOAPI STREQUAL bela)
-	find_package(Xenomai)
-	if(NOT XENOMAI_FOUND)
-		message(FATAL_ERROR "Bela selected as audio API, but Xenomai development files not found")
-	endif()
-	find_package(Bela)
-	if(NOT BELA_FOUND)
-		message(FATAL_ERROR "Bela selected as audio API, but Bela development files not found")
-	endif()
-	message(STATUS "bela libs: ${BELA_LIBRARIES}")
-	if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
-		# recommended compile flags for beaglebone etc; set here because bela api flag directly implies the architecture
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon")
-	endif()
+    find_package(Xenomai)
+    if(NOT XENOMAI_FOUND)
+        message(FATAL_ERROR "Bela selected as audio API, but Xenomai development files not found")
+    endif()
+    find_package(Bela)
+    if(NOT BELA_FOUND)
+        message(FATAL_ERROR "Bela selected as audio API, but Bela development files not found")
+    endif()
+    message(STATUS "bela libs: ${BELA_LIBRARIES}")
+    if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
+        # recommended compile flags for beaglebone etc; set here because bela api flag directly implies the architecture
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv7-a -mtune=cortex-a8 -mfloat-abi=hard -mfpu=neon")
+    endif()
 endif()
 message(STATUS "Audio API: ${AUDIOAPI}")
 
@@ -171,7 +171,7 @@ elseif(NOT NO_LIBSNDFILE)
 endif(SNDFILE_FOUND)
 
 if(UNIX AND NOT APPLE)
-	target_compile_definitions(libscsynth PUBLIC "SC_PLUGIN_DIR=\"${CMAKE_INSTALL_PREFIX}/lib/SuperCollider/plugins\"")
+	target_compile_definitions(libscsynth PUBLIC "SC_PLUGIN_DIR=\"${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/SuperCollider/plugins\"")
 endif()
 
 
@@ -316,7 +316,7 @@ elseif(WIN32)
 else()
 	install(TARGETS ${INSTALL_TARGETS}
 			RUNTIME DESTINATION "bin"
-			LIBRARY DESTINATION "lib"
+			LIBRARY DESTINATION "lib${LIB_SUFFIX}"
 			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 endif()
 

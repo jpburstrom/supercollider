@@ -40,14 +40,14 @@ METHOD:: string
 		A String.
 
 METHOD:: setString
-	Inserts the code::string:: at code::rangeStart:: position, replacing code::rangeSize:: amount of following characters. If code::rangeSize:: is 0, the text will be inserted without any characters being removed.
+	Inserts the code::string:: at code::start:: position, replacing code::size:: amount of following characters. If code::size:: is 0, the text will be inserted without any characters being removed.
 
 	argument:: string
 		A String - the text to insert.
-	argument:: rangeStart
+	argument:: start
 		An Integer position within the text, in characters.
-	argument:: rangeSize
-		An Integer amount of characters.
+	argument:: size
+		An Integer amount of characters to be replaced.
 
 METHOD:: currentLine
 	The plain text of the line at text cursor.
@@ -81,23 +81,23 @@ fork {
 
 
 METHOD:: setFont
-	Applies the code::font:: to code::rangeSize:: amount of characters following the code::rangeStart:: position.
+	Applies the code::font:: to code::size:: amount of characters following the code::start:: position.
 
 	argument:: font
 		A Font to apply to the desired range of text.
-	argument:: rangeStart
+	argument:: start
 		An Integer position within the text, in characters.
-	argument:: rangeSize
+	argument:: size
 		An Integer amount of characters.
 
 METHOD:: setStringColor
-	Applies the code::color:: to code::rangeSize:: amount of characters following the code::rangeStart:: position.
+	Applies the code::color:: to code::size:: amount of characters following the code::start:: position.
 
 	argument:: color
 		A Color to apply to the desired range of text.
-	argument:: rangeStart
+	argument:: start
 		An Integer position within the text, in characters.
-	argument:: rangeSize
+	argument:: size
 		An Integer amount of characters.
 
 
@@ -245,7 +245,7 @@ METHOD:: autohidesScrollers
 
 SUBSECTION:: Drag and Drop
 
-note:: Default drag-and-drop behavior of TextView is not defined in standard SC methods (see link::Classes/View#subclassing::), but in the view implementation instead (except for link::#-defaultGetDrag::). It may or may not be overridable by adding your own handlers (see link::Classes/View#Drag and drop::), depending on the GUI kit in use.
+note:: Default drag-and-drop behavior of TextView is not defined in standard SC methods, but in the view implementation instead (except for link::#-defaultGetDrag::). It may or may not be overridable by adding your own handlers (see link::Classes/View#Drag and drop::), depending on the GUI kit in use.
 ::
 
 Dragging from TextView will give the selected text in a String as drag data, while dropping will accept any object and insert it link::Classes/Object#-asString#as String:: at the drop location.

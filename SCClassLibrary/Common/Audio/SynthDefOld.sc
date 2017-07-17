@@ -1,5 +1,5 @@
 SynthDefOld : SynthDef {
-	
+
 	*new { arg name, ugenGraphFunc, rates, prependArgs, variants, metadata;
 		^super.new.name_(name.asSymbol).variants_(variants).metadata_(metadata).children_(Array.new(64))
 			.build(ugenGraphFunc, rates, prependArgs)
@@ -16,79 +16,87 @@ SynthDefOld : SynthDef {
 				.format(name), this).throw
 		}
 	}
-	
+
 	writeDef { arg file;
 		// This describes the file format for the synthdef files.
 		var allControlNamesTemp, allControlNamesMap;
 
-		file.putPascalString(name.asString);
+		try {
+			file.putPascalString(name.asString);
 
-		this.writeConstants(file);
+			this.writeConstants(file);
 
-		//controls have been added by the Control UGens
-		file.putInt16(controls.size);
-		controls.do { | item |
-			file.putFloat(item);
-		};
-
-		allControlNamesTemp = allControlNames.reject { |cn| cn.rate == \noncontrol };
-		file.putInt16(allControlNamesTemp.size);
-		allControlNamesTemp.do { | item |
-			if (item.name.notNil) {
-				file.putPascalString(item.name.asString);
-				file.putInt16(item.index);
+			//controls have been added by the Control UGens
+			file.putInt16(controls.size);
+			controls.do { | item |
+				file.putFloat(item);
 			};
-		};
 
-		file.putInt16(children.size);
-		children.do { | item |
-			item.writeDefOld(file);
-		};
-
-		file.putInt16(variants.size);
-		if (variants.size > 0) {
-			allControlNamesMap = ();
-			allControlNamesTemp.do { |cn|
-				allControlNamesMap[cn.name] = cn;
-			};
-			variants.keysValuesDo {|varname, pairs|
-				var varcontrols;
-
-				varname = name ++ "." ++ varname;
-				if (varname.size > 32) {
-					Post << "variant '" << varname << "' name too long.\n";
-					^nil
+			allControlNamesTemp = allControlNames.reject { |cn| cn.rate == \noncontrol };
+			file.putInt16(allControlNamesTemp.size);
+			allControlNamesTemp.do { | item |
+				if (item.name.notNil) {
+					file.putPascalString(item.name.asString);
+					file.putInt16(item.index);
 				};
-				varcontrols = controls.copy;
-				pairs.pairsDo { |cname, values|
-					var cn, index;
-					cn = allControlNamesMap[cname];
-					if (cn.notNil) {
-						values = values.asArray;
-						if (values.size > cn.defaultValue.asArray.size) {
-							postf("variant: '%' control: '%' size mismatch.\n",
+			};
+
+			file.putInt16(children.size);
+			children.do { | item |
+				item.writeDefOld(file);
+			};
+
+			file.putInt16(variants.size);
+			if (variants.size > 0) {
+				allControlNamesMap = ();
+				allControlNamesTemp.do { |cn|
+					allControlNamesMap[cn.name] = cn;
+				};
+				variants.keysValuesDo {|varname, pairs|
+					var varcontrols;
+
+					varname = name ++ "." ++ varname;
+					if (varname.size > 32) {
+						Post << "variant '" << varname << "' name too long.\n";
+						^nil
+					};
+					varcontrols = controls.copy;
+					pairs.pairsDo { |cname, values|
+						var cn, index;
+						cn = allControlNamesMap[cname];
+						if (cn.notNil) {
+							values = values.asArray;
+							if (values.size > cn.defaultValue.asArray.size) {
+								postf("variant: '%' control: '%' size mismatch.\n",
+									varname, cname);
+								^nil
+							}{
+								index = cn.index;
+								values.do {|val, i|
+									varcontrols[index + i] = val;
+								}
+							}
+						}{
+							postf("variant: '%' control: '%' not found.\n",
 								varname, cname);
 							^nil
-						}{
-							index = cn.index;
-							values.do {|val, i|
-								varcontrols[index + i] = val;
-							}
 						}
-					}{
-						postf("variant: '%' control: '%' not found.\n",
-								varname, cname);
-						^nil
-					}
+					};
+					file.putPascalString(varname);
+					varcontrols.do { | item |
+						file.putFloat(item);
+					};
 				};
-				file.putPascalString(varname);
-				varcontrols.do { | item |
-					file.putFloat(item);
-				};
+			}
+		} { // catch
+			arg e;
+			if (file.respondsTo(\close)) {
+				file.close;
 			};
+			Error("SynthDefOld: could not write def: %".format(e.what())).throw;
 		}
 	}
-	
+
 	writeConstants { arg file;
 		var array = FloatArray.newClear(constants.size);
 		constants.keysValuesDo { arg value, index;
@@ -100,7 +108,7 @@ SynthDefOld : SynthDef {
 			file.putFloat(item)
 		};
 	}
-	
+
 	asBytes {
 		var stream = CollStream.on(Int8Array.new(256));
 		this.asArray.writeDefOld(stream);
@@ -110,7 +118,7 @@ SynthDefOld : SynthDef {
 }
 
 + Collection {
-	
+
 	writeDefOld { | file |
 		file.putString("SCgf");
 		file.putInt32(1); // file version
@@ -125,22 +133,27 @@ SynthDefOld : SynthDef {
 }
 
 + UGen {
-	
+
 	writeDefOld { arg file;
 		//[\WR, this.class.name, rate, this.numInputs, this.numOutputs].postln;
-		file.putPascalString(this.name);
-		file.putInt8(this.rateNumber);
-		file.putInt16(this.numInputs);
-		file.putInt16(this.numOutputs);
-		file.putInt16(this.specialIndex);
-		// write wire spec indices.
-		inputs.do({ arg input;
-			input.writeInputSpecOld(file, synthDef);
-		});
-		this.writeOutputSpecs(file);
-		//[this.class.name, file.length].postln;
+		try {
+			file.putPascalString(this.name);
+			file.putInt8(this.rateNumber);
+			file.putInt16(this.numInputs);
+			file.putInt16(this.numOutputs);
+			file.putInt16(this.specialIndex);
+			// write wire spec indices.
+			inputs.do({ arg input;
+				input.writeInputSpecOld(file, synthDef);
+			});
+			this.writeOutputSpecs(file);
+			//[this.class.name, file.length].postln;
+		} { // catch
+			arg e;
+			Error("UGen: could not write def: %".format(e.what())).throw;
+		}
 	}
-	
+
 	writeInputSpecOld { arg file, synthDef;
 		file.putInt16(synthIndex);
 		file.putInt16(this.outputIndex);
@@ -148,7 +161,7 @@ SynthDefOld : SynthDef {
 }
 
 + SimpleNumber {
-	
+
 	writeInputSpecOld { arg file, synth;
 		var constIndex = synth.constants.at(this.asFloat);
 		if (constIndex.isNil) {
@@ -160,7 +173,7 @@ SynthDefOld : SynthDef {
 }
 
 + Object {
-	
+
 	writeDefFileOld { arg name, dir, overwrite = (true);
 
 		StartUp.defer { // make sure the synth defs are written to the right path

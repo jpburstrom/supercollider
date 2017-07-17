@@ -66,7 +66,7 @@ BusPlug : AbstractFunction {
 		};
 		this.prepareOutput;
 		output = InBus.ar(bus, numChannels, offset, clip);
-		 // always return an array if no channel size is specified
+		// always return an array if no channel size is specified
 		^if(numChannels.isNil) { output.asArray } { output }
 	}
 
@@ -77,7 +77,7 @@ BusPlug : AbstractFunction {
 		};
 		this.prepareOutput;
 		output = InBus.kr(bus, numChannels, offset, clip);
-		 // always return an array if no channel size is specified
+		// always return an array if no channel size is specified
 		^if(numChannels.isNil) { output.asArray } { output }
 	}
 
@@ -318,6 +318,7 @@ BusPlug : AbstractFunction {
 		};
 		this.newMonitorToBundle(bundle, numChannels);
 		group = group ?? { if(parentGroup.isPlaying) { parentGroup } };
+		out = out.asControlInput;
 		if(numChannels.notNil) { out = (0..numChannels-1) + (out ? 0) };
 		monitor.playNBusToBundle(bundle, out, nil, nil, bus, vol, fadeTime, group, addAction, multi);
 	}
