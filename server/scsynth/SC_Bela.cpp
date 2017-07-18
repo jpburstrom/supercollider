@@ -63,7 +63,6 @@ void initializeScheduler()
 }
 
 
-
 class SC_BelaDriver : public SC_AudioDriver
 {
 
@@ -80,6 +79,7 @@ public:
 	virtual ~SC_BelaDriver();
 
 	void BelaAudioCallback(BelaContext *belaContext);
+	void SignalReceived(int);
 	static void staticMAudioSyncSignal(void*);
 	static AuxiliaryTask mAudioSyncSignalTask;
 	static int countInstances;
@@ -91,10 +91,16 @@ private:
 AuxiliaryTask SC_BelaDriver::mAudioSyncSignalTask;
 int SC_BelaDriver::countInstances;
 SC_SyncCondition* SC_BelaDriver::staticMAudioSync;
+SC_BelaDriver *mBelaDriverInstance = 0;
 
 SC_AudioDriver* SC_NewAudioDriver(struct World *inWorld)
 {
-	return new SC_BelaDriver(inWorld);
+	if(mBelaDriverInstance != 0) {
+		scprintf("Warning: SC_NewAudioDriver called with an existing SC_BelaDriver instance.\n");
+	}
+	
+	mBelaDriverInstance = new SC_BelaDriver(inWorld);
+	return mBelaDriverInstance;
 }
 
 SC_BelaDriver::SC_BelaDriver(struct World *inWorld)
@@ -115,8 +121,9 @@ SC_BelaDriver::~SC_BelaDriver()
 {
 	// Clean up any resources allocated for audio
 	Bela_cleanupAudio();
-       	scprintf("SC_BelaDriver: >>Bela_cleanupAudio\n");
+    scprintf("SC_BelaDriver: >>Bela_cleanupAudio\n");
 	--countInstances;
+	mBelaDriverInstance = 0;
 }
 
 // setup() is called once before the audio rendering starts.
@@ -148,6 +155,12 @@ void sc_belaRender(BelaContext *belaContext, void *userData)
 	SC_BelaDriver *driver = (SC_BelaDriver*)userData;
 
 	driver->BelaAudioCallback(belaContext);
+}
+
+void sc_belaSignal(int arg)
+{
+	if(mBelaDriverInstance != 0)
+		mBelaDriverInstance->SignalReceived(arg);
 }
 
 void sc_SetDenormalFlags();
@@ -437,6 +450,10 @@ bool SC_BelaDriver::DriverSetup(int* outNumSamples, double* outSampleRate)
 	*outNumSamples = settings.periodSize;
 	*outSampleRate = 44100.0;		// This is fixed in Bela at the moment
 
+	// Set up interrupt handler to catch Control-C and SIGTERM
+	signal(SIGINT, sc_belaSignal);
+	signal(SIGTERM, sc_belaSignal);
+
 	return true;
 }
 
@@ -455,4 +472,11 @@ bool SC_BelaDriver::DriverStop()
 	Bela_stopAudio();
 	scprintf("SC_BelaDriver: >>DriverStop\n");
 	return true;
+}
+
+void SC_BelaDriver::SignalReceived(int)
+{
+	scprintf("SC_BelaDriver: interrupt; terminating\n");
+	mWorld->hw->mTerminating = true;
+	mWorld->hw->mQuitProgram->post();		
 }
