@@ -462,11 +462,11 @@ World* World_New(WorldOptions *inOptions)
 		world->mBelaHeadphoneLevel = inOptions->mBelaHeadphoneLevel;
 		world->mBelaPGAGainLeft = inOptions->mBelaPGAGainLeft;
 		world->mBelaPGAGainRight = inOptions->mBelaPGAGainRight;                
-                world->mBelaSpeakerMuted = inOptions->mBelaSpeakerMuted;
-                world->mBelaDACLevel = inOptions->mBelaDACLevel;
-                world->mBelaADCLevel = inOptions->mBelaADCLevel;
-                world->mBelaNumMuxChannels = inOptions->mBelaNumMuxChannels;
-                world->mBelaPRU = inOptions->mBelaPRU;
+        world->mBelaSpeakerMuted = inOptions->mBelaSpeakerMuted;
+        world->mBelaDACLevel = inOptions->mBelaDACLevel;
+        world->mBelaADCLevel = inOptions->mBelaADCLevel;
+        world->mBelaNumMuxChannels = inOptions->mBelaNumMuxChannels;
+        world->mBelaPRU = inOptions->mBelaPRU;
 #endif
 
 #ifdef __APPLE__
@@ -810,7 +810,7 @@ void World_WaitForQuit(struct World *inWorld, bool unload_plugins)
 	} catch (std::exception& exc) {
 		scprintf("Exception in World_WaitForQuit: %s\n", exc.what());
 	} catch (...) {
-                scprintf("Exception ... in World_WaitForQuit: %s\n" );
+        scprintf("Exception ... in World_WaitForQuit: %s\n" );
 	}
 }
 
