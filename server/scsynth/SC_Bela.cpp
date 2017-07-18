@@ -272,6 +272,8 @@ void SC_BelaDriver::BelaAudioCallback(BelaContext *belaContext)
 				    analogValue = analogRead(belaContext, n / mAudioFramesPerAnalogFrame, analogPin); // this is between 0 and 1
                     analogValue = analogValue * 2. - 1.; // remap from 0 to 1 to -1 to 1
 				  }
+                  scprintf("analog in: %i: %f\n", analogPin, analogValue);
+
 				  *dst++ = analogValue; // is this between 0 and 1 still?
 				}
 				*tch++ = bufCounter;
@@ -348,7 +350,7 @@ void SC_BelaDriver::staticMAudioSyncSignal(void*){
 
 bool SC_BelaDriver::DriverSetup(int* outNumSamples, double* outSampleRate)
 {
-        SetPrintFunc((PrintFunc)rt_vprintf);
+    SetPrintFunc((PrintFunc)rt_vprintf);
 	scprintf("SC_BelaDriver: >>DriverSetup\n");
 	BelaInitSettings settings;
 	Bela_defaultSettings(&settings);	// This function should be called in main() before parsing any command-line arguments. It
@@ -362,7 +364,7 @@ bool SC_BelaDriver::DriverSetup(int* outNumSamples, double* outSampleRate)
 	}
 	if(settings.periodSize < mSCBufLength) {
 		scprintf("Error in SC_BelaDriver::DriverSetup(): hardware buffer size (%i) smaller than SC audio buffer size (%i). It is recommended to have them set to the same value, using both the '-Z' and '-z' command-line options respectively.\n",
-				settings.periodSize, mSCBufLength);
+            settings.periodSize, mSCBufLength);
 		return false;
 	}
 	// note that Bela doesn't give us an option to choose samplerate, since it's baked-in.
@@ -377,19 +379,30 @@ bool SC_BelaDriver::DriverSetup(int* outNumSamples, double* outSampleRate)
 	  } else {
 	    settings.numAnalogInChannels = 8; // analog rate == audie rate / 2
 	  }
-	} else {
-	  settings.numAnalogInChannels = 0;
+// 	} else {
+// 	  settings.numAnalogInChannels = 0;
 	}
 	
 	if ( mWorld->mBelaAnalogOutputChannels > 0 ){
 	  if ( mWorld->mBelaAnalogOutputChannels < 5 ){ // always use a minimum of 4 analog channels, as we cannot read analog I/O faster than audio rate	    
 	    settings.numAnalogOutChannels = 4; // analog rate == audio rate
 	  } else {
-	    settings.numAnalogOutChannels = 8; // analog rate == audie rate / 2
+	    settings.numAnalogOutChannels = 8; // analog rate == audio rate / 2
 	  }
 	} else {
 	  settings.numAnalogOutChannels = 0;
 	}
+	
+	// right now the number of analog output channels on bela needs to be the same as analog input channels
+	if ( settings.numAnalogOutChannels > settings.numAnalogInChannels ){
+        settings.numAnalogInChannels = settings.numAnalogOutChannels;
+    }
+	if ( settings.numAnalogInChannels > settings.numAnalogOutChannels ){
+        settings.numAnalogOutChannels = settings.numAnalogInChannels;
+    }
+    if ( settings.numAnalogInChannels > 0 ){
+        settings.useAnalog = 1;
+    }
 	
 	// configure the number of digital channels
 	settings.useDigital = 0;
