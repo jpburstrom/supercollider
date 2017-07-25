@@ -28,7 +28,11 @@
 #include "SC_Time.hpp"
 #include <math.h>
 #include <stdlib.h>
-#include <posix/time.h>		// For Xenomai clock_gettime()
+#include <posix/time.h> // for struct timespec and clockid_t
+extern "C" {
+// This will be wrapped by Xenomai without requiring linker flags
+	int __wrap_clock_gettime(clockid_t clock_id, struct timespec *tp);
+}
 
 #include "Bela.h"
 // Xenomai-specific includes
@@ -162,7 +166,7 @@ void SC_BelaDriver::BelaAudioCallback(BelaContext *belaContext)
 	// NOTE: code here is adapted from the SC_Jack.cpp, the version not using the DLL
 
 	// Use Xenomai-friendly clock_gettime() -- note that this requires a -wrap argument to build
-	clock_gettime(CLOCK_HOST_REALTIME, &tspec);
+	__wrap_clock_gettime(CLOCK_HOST_REALTIME, &tspec);
 
 	double hostSecs = (double)tspec.tv_sec + (double)tspec.tv_nsec * 1.0e-9;
 	double sampleTime = static_cast<double>(belaContext->audioFramesElapsed);
@@ -285,25 +289,27 @@ void SC_BelaDriver::BelaAudioCallback(BelaContext *belaContext)
 			// copy touched outputs
 			tch = outTouched;
 
-			for (int k = 0; k < minOutputs; ++k) {
-				if (*tch++ == bufCounter) {
+            for (int k = 0; k < minOutputs; ++k) {
+                if (*tch++ == bufCounter) {
                     memcpy(
                         belaContext->audioOut + k * bufFrames,
                         outBuses + k * bufFrames,
                         sizeof(belaContext->audioOut[0]) * bufFrames
                     );
-				}
+                }
 			}
 
 			for (int k = minOutputs; k < ( minOutputs + anaOutputs ); ++k) {
-				unsigned int analogChannel = k - minOutputs; // starting at 0
-                memcpy(
-                    belaContext->analogOut,
-                    outBuses + analogChannel * bufFrames,
-                    sizeof(belaContext->analogOut[0]) * bufFrames
-                );
-                // analogWriteOnceNI( belaContext, n / mAudioFramesPerAnalogFrame, analogPin, *src * 0.5 + 0.5 ); // used to be like this 
+                if (*tch++ == bufCounter) {
+                    unsigned int analogChannel = k - minOutputs; // starting at 0
+                    memcpy(
+                        belaContext->analogOut + analogChannel * bufFrames,
+                        outBuses + k * bufFrames,
+                        sizeof(belaContext->analogOut[0]) * bufFrames
+                    );
+				}
 			}
+
 			// advance OSC time
 			mOSCbuftime = oscTime = nextTime;
 		}
@@ -345,54 +351,73 @@ bool SC_BelaDriver::DriverSetup(int* outNumSamples, double* outSampleRate)
         
 	}
 	// note that Bela doesn't give us an option to choose samplerate, since it's baked-in.
+	// This can be retrieved in sc_belaSetup()
 	
-	// configure the number of analog channels - this will determine their samplerate
+	// configure the number of analog channels - this will determine their internal samplerate
 	settings.useAnalog = 0;
 	
-	if ( mWorld->mBelaAnalogInputChannels > 0 ){
-	  if ( mWorld->mBelaAnalogInputChannels < 5 ){ // always use a minimum of 4 analog channels, as we cannot read analog I/O faster than audio rate	    
-	    settings.numAnalogInChannels = 4; // actual analog rate == audio rate
-	  } else {
-	    settings.numAnalogInChannels = 8; // actual analog rate == audio rate / 2
-	  }
-	}
-	
-	if ( mWorld->mBelaAnalogOutputChannels > 0 ){
-	  if ( mWorld->mBelaAnalogOutputChannels < 5 ){ // always use a minimum of 4 analog channels, as we cannot read analog I/O faster than audio rate	    
-	    settings.numAnalogOutChannels = 4; // actual analog rate == audio rate
-	  } else {
-	    settings.numAnalogOutChannels = 8; // actual analog rate == audio rate / 2
-	  }
-	} else {
-	  settings.numAnalogOutChannels = 0;
-	}
-	
-	// right now the number of analog output channels on bela needs to be the same as analog input channels
-	if ( settings.numAnalogOutChannels > settings.numAnalogInChannels ){
-        settings.numAnalogInChannels = settings.numAnalogOutChannels;
+    // explicitly requested number of analog channels
+    int numAnalogIn = mWorld->mBelaAnalogInputChannels;
+    int numAnalogOut = mWorld->mBelaAnalogOutputChannels;
+
+    int extraAudioIn = mWorld->mNumInputs - settings.numAudioInChannels;
+    int extraAudioOut = mWorld->mNumOutputs - settings.numAudioOutChannels;
+    // if we need more audio channels than there actually are audio 
+    // channels, make sure we have some extra analogs
+    if(extraAudioIn > 0)
+    {
+        numAnalogIn = sc_max(numAnalogIn, extraAudioIn);
     }
-	if ( settings.numAnalogInChannels > settings.numAnalogOutChannels ){
-        settings.numAnalogOutChannels = settings.numAnalogInChannels;
+    if(extraAudioOut > 0)
+    {
+        numAnalogOut = sc_max(numAnalogOut, extraAudioOut);
     }
-    if ( settings.numAnalogInChannels > 0 ){
+
+    // snap the number of requested analog channels to the 0, 4, 8.
+    // 4 will give same actual sample rate as audio, 8 will give half of it.
+    if ( numAnalogIn > 0 ){
+        if ( numAnalogIn < 5 ){
+            numAnalogIn = 4;
+        } else {
+            numAnalogIn = 8;
+        }
+    }
+
+    if ( numAnalogOut > 0 ) {
+        if ( numAnalogOut< 5 ){
+            numAnalogOut = 4;
+        } else {
+            numAnalogOut = 8;
+        }
+    }
+
+    // final check: right now the number of analog output channels on bela needs to be the same as analog input channels.
+    // this is likely to change in the future, that is why we factored it out
+    if ( numAnalogOut!= numAnalogIn ){
+        // Chosing the maximum of the two
+        numAnalogOut = sc_max(numAnalogOut,numAnalogIn);
+        numAnalogIn = numAnalogOut;
+        printf("Number of analog input channels must match number of analog outputs. Using %u for both\n", numAnalogIn);
+    }
+    settings.numAnalogInChannels = numAnalogOut;
+    settings.numAnalogOutChannels = numAnalogIn;
+
+    if ( settings.numAnalogInChannels > 0 || settings.numAnalogOutChannels > 0 ){
         settings.useAnalog = 1;
     }
 
-    // if we need more audio channels than there actually are audio 
-    // channels, we enable the audio expander capelet for the first
-    // few analog channels
-
-    int extraAudioIn = mWorld->mNumInputs - settings.numAudioInChannels;
+    // enable the audio expander capelet for the first few "analog as audio" channels
+	// inputs and ...
     for(int n = 0; n < extraAudioIn; ++n )
     {
         printf("Using analog in %d as audio in %d\n", n, n + settings.numAudioInChannels);
         settings.audioExpanderInputs |= (1 << n);
     }
 	
-    int extraAudioOut = mWorld->mNumOutputs - settings.numAudioOutChannels;
+	// ... outputs
     for(int n = 0; n < extraAudioOut; ++n )
     {
-        scprintf("Using analog out %d as audio out %d\n", n, n + settings.numAudioOutChannels);
+        printf("Using analog out %d as audio out %d\n", n, n + settings.numAudioOutChannels);
         settings.audioExpanderOutputs |= (1 << n);
     }
 
