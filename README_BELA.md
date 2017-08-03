@@ -10,7 +10,9 @@ This file is Dan's, Marije's and Giulio's notes about compiling SC on [Bela](htt
 This branch contains that plus other modifications to get the SC source code master branch building.
 The main addition in this branch is a **Xenomai/Bela audio driver for scsynth**, to use Bela's ultra-low-latency audio thread *instead* of jack/portaudio, and **plugins to access the analog and digital channels of the Bela-cape**
 
-> *NOTE:* This guide assumes you have the [Bela image v0.2.0b](https://github.com/BelaPlatform/bela-image/releases/tag/v0.2.0b) (or higher) and that you have the most recent version of the `dev-libbela` branch of the [Bela code](https://github.com/BelaPlatform/Bela/) checked out in the `/root/Bela` folder of your Bela.
+> *NOTE:* This guide assumes you have the [Bela image v0.2.0b](https://github.com/BelaPlatform/bela-image/releases/tag/v0.2.0b).
+
+> *NOTE:* You need to update the Bela code in `/root/Bela` to [Bela dev-lib](https://github.com/BelaPlatform/Bela/tree/dev-libbela) branch for this version to compile.
 
 All of the commands here are to be executed *on the Bela device itself*. Normally you would SSH to it from a computer connected by USB, in order to do the following stuff.
 
