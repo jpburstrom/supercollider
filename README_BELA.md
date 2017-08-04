@@ -7,7 +7,7 @@ See [README.md](README.md) for the main SuperCollider readme.
 
 This file is Dan's, Marije's and Giulio's notes about compiling SC on [Bela](http://bela.io) platform.
 
-This branch `bela_hackery_v01` contains that plus other modifications to get the SC source code master branch building.
+This branch `bela_hackery_v02` contains that plus other modifications to get the SC source code master branch building.
 The main addition in this branch is a **Xenomai/Bela audio driver for scsynth**, to use Bela's ultra-low-latency audio thread *instead* of jack/portaudio, and **plugins to access the analog and digital channels of the Bela-cape**
 
 > *NOTE:* This guide assumes you have the [Bela image v0.2.0b](https://github.com/BelaPlatform/bela-image/releases/tag/v0.2.0b) (or higher).
