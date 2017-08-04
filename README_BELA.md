@@ -59,11 +59,12 @@ Compiling and installing
 ========================
 
 Update apt source list:
+
     apt-get update
 
 We need gcc-4.8 / g++-4.8 as 4.9 causes a weird bug (https://github.com/supercollider/supercollider/issues/1450):
 
-    apt-get install gcc-4.8 g++-4.8
+    apt-get install -t jessie gcc-4.8 g++-4.8
 
 Get the newest cmake:
 
@@ -71,7 +72,7 @@ Get the newest cmake:
 
 Get dependent libraries:
     
-    apt-get install libudev-dev
+    apt-get install -t jessie libudev-dev
 
 
 Before we compile, here are two optional steps to make your workflow faster
