@@ -8,6 +8,7 @@ See [README.md](README.md) for the main SuperCollider readme.
 This file is Dan's, Marije's and Giulio's notes about compiling SC on [Bela](http://bela.io) platform.
 
 This branch contains that plus other modifications to get the SC source code master branch building.
+
 The main addition in this branch is a **Xenomai/Bela audio driver for scsynth**, to use Bela's ultra-low-latency audio thread *instead* of jack/portaudio, and **plugins to access the analog and digital channels of the Bela-cape**
 
 > *NOTE:* This guide assumes you have the [Bela image v0.2.0b](https://github.com/BelaPlatform/bela-image/releases/tag/v0.2.0b).
@@ -56,12 +57,31 @@ My modified source code is in this git branch here. If your Bela is still connec
 Compiling and installing
 ========================
 
+
+Update apt source list:
+
+    apt-get update
+
+We need gcc-4.8 / g++-4.8 as 4.9 causes a weird bug (https://github.com/supercollider/supercollider/issues/1450):
+
+    apt-get install -t jessie gcc-4.8 g++-4.8
+
+Get the newest cmake:
+
+    apt-get -t jessie install cmake    # need this updated version
+
+Get dependent libraries:
+    
+    apt-get install -t jessie libudev-dev
+
 Before we compile, here are two optional steps to make your workflow faster
 
 1. installing `ccache` makes repeated builds faster, if you have spare disk space for it. It's especially helpful if you're going to be changing the cmake build scripts.
 
-    mkdir /root/.ccache
-    echo "cache_dir = '/extrabela/ccache'" >> ~/.ccache/ccache.conf
+```
+mkdir /root/.ccache
+echo "cache_dir = '/extrabela/ccache'" >> ~/.ccache/ccache.conf
+```
 
 2. alternatively, use `distcc` to make all your builds faster by off-loading the actual compilation to your host computer. You need to:
 * install a cross-compiler for gcc-4.8 on your host (e.g.: [this](http://bela.io/downloads/gcc-linaro-arm-linux-gnueabihf-2014.04_mac.pkg) for Mac or a `g++-4.8-arm-linux-gnueabihf` package for your Linux distro)
