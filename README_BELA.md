@@ -50,7 +50,7 @@ Get the source code
 My modified source code is in this git branch here. If your Bela is still connected to the network you can grab it directly:
 
     cd /extrabela
-    git clone --recursive -b bela_hackery_v02_master https://github.com/sensestage/supercollider.git
+    git clone --recursive -b bela_hackery_v02 https://github.com/sensestage/supercollider.git
     cd supercollider
 
 
