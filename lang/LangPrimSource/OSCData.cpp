@@ -803,12 +803,13 @@ void PerformOSCBundle(int inSize, const char* inData, PyrObject* replyObj, int i
 }
 
 void PerformOSCMessage(int inSize, const char* inData, PyrObject* replyObj, int inPortNum, double time) {
-	try {
-		PyrObject* arrayObj = ConvertOSCMessage(inSize, inData);
-	} catch (runtime_error e) {
-		error(e.what());
-		return;
-	}
+    PyrObject* arrayObj;
+    try {
+        arrayObj = ConvertOSCMessage(inSize, inData);
+    } catch (std::runtime_error& e) {
+        error("%s\n", e.what());
+        return;
+    }
 
     // call virtual machine to handle message
     VMGlobals* g = gMainVMGlobals;
